@@ -6,7 +6,7 @@ JumpCache = TTLCache(maxsize=100, ttl=300)
 
 class JumpFinder:
 	def __init__(self):
-		self.star_roadmap = json.load(open("roadmap.json"))
+		self.star_roadmap = json.load(open("components/sde/roadmap.json"))
 		for a in self.star_roadmap:
 			self.star_roadmap[a] = map(lambda x: x[0],self.star_roadmap[a])
 	@cached(JumpCache)
