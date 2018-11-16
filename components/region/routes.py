@@ -1,6 +1,8 @@
 from flask import Blueprint
 from flask import render_template
-evestatic = __import__('%s.evestatic.evestatic'%(__name__.split(".")[0]))
+print '%s.evestatic.evestatic'%(__name__.split(".")[0])
+import importlib
+evestatic = importlib.import_module('%s.evestatic.evestatic'%(__name__.split(".")[0]))
 import json
 import pkg_resources
 region = Blueprint("region",__name__,template_folder='templates')
