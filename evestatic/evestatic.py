@@ -1,7 +1,19 @@
 import sqlite3
 from sqlite3 import Error
-import pkg_resources	
+import pkg_resources
+from flask import g	
 
+def get_evestatic():
+    evestatic_db = getattr(g, '_evestatic', None)
+    if evestatic_db is None:
+        evestatic_db = g._evestatic = StaticData()
+    return evestatic_db
+	
+def close_evestatic():
+	evestatic_db = getattr(g, '_evestatic', None)
+	if evestatic_db is not None:
+		evestatic_db.c.close()
+		
 class StaticData():
 	def __init__(self):
 		self.conn = sqlite3.connect(pkg_resources.resource_filename(__name__,"evestatic.db"))

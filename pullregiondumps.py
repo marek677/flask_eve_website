@@ -69,8 +69,6 @@ def PullJitaBuys(em):
 		if order["item"] not in jita_buys:
 			jita_buys[order["item"]] = []
 		jita_buys[order["item"]].append(order)
-	with open('jita_buys.json', 'wb') as outfile:
-		json.dump(jita_buys, outfile)
 	for x in jita_buys:
 		jita_buys[x] = sorted(jita_buys[x],key=lambda xx : xx["price"],reverse=True)
 	return jita_buys
