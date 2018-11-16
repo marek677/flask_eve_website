@@ -8,6 +8,7 @@ from evestatic import evejumps
 import time
 from evestatic import evestatic	
 import threading	
+import pkg_resources
 
 class ESI:
 	def __init__(self):
@@ -112,7 +113,7 @@ def doRegionCalc(region_name):
 	#Adding jump information
 	#jumps = jf.FindRoute(order["system"],30000142)
 	print "[%s] File dump..." % datetime.datetime.now()
-	with open('components/region/static/local_dumps/%s_orders.json'%region_name.replace(" ","_"), 'wb') as outfile:
+	with open(pkg_resources.resource_filename(__name__,'components/region/static/local_dumps/%s_orders.json'%region_name.replace(" ","_")), 'wb') as outfile:
 		json.dump(aridia_orders, outfile)
 	print "[%s] Region %s finished..." % (datetime.datetime.now(),region_name)
 	
