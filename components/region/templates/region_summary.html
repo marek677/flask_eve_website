@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block menu_region_summary %}w3-blue{% endblock %}
+{% block content %}
+<header class="w3-container" style="padding-top:22px">
+	<h5><b><i class="fa fa-dashboard"></i> Regional Trading Summary</b></h5>
+</header>
+<div style="padding:20px;">
+<table class="w3-table-all w3-hoverable" id="my_region_table">
+<tr class="w3-blue">
+<td class="w3-center">System</td><td class="w3-center">Jumps</td><td class="w3-center">Total Earn per DST</td><td class="w3-center">DST/Jump</td></tr>
+{% for order in order_table %}
+    <tr>
+		<td class="w3-center"> {{order[0]}}</td>
+		<td class="w3-center"> {{order[1]}}</td>
+		<td class="w3-center"> {{order[2]}}</td>
+		<td class="w3-center"> {{order[3]}}</td>
+	</tr>
+{% endfor %}
+	
+	</table>
+</div>
+{% endblock %}

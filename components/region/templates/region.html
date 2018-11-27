@@ -1,13 +1,33 @@
 {% extends "base.html" %}
 {% block menu_region %}w3-blue{% endblock %}
 {% block content %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+function myFilterFunc() {
+	var text_value = $("#myInput").val().toLowerCase();
+	$("#my_region_table tr:not(:first-child)").filter(function() {
+	  cond = ($(this).text().toLowerCase().indexOf(text_value) > -1 && parseFloat($(this).find('td:eq(7)').text())/parseFloat($(this).find('td:eq(3)').text()) > parseFloat($("#DST_jmp_ratio").val()))
+	  $(this).toggle(cond)
+	});
+}
+
+$(document).ready(function(){
+  $("#myInput").on("keyup", myFilterFunc);
+  $("#DST_jmp_ratio").on("keyup", myFilterFunc);
+});
+</script>
 <header class="w3-container" style="padding-top:22px">
 	<h5><b><i class="fa fa-dashboard"></i> Regional Trading</b></h5>
+	<form class="w3-container">
+	<label class="w3-text-blue"><b>Filter</b></label>
+	<input class="w3-input w3-border" id="myInput" type="text" placeholder="Search..">
+	<label class="w3-text-blue"><b>DST/jump</b></label>
+	<input class="w3-input w3-border" id="DST_jmp_ratio" type="text" placeholder="1"></form>
 </header>
 <div style="padding:20px;">
-
-<table class="w3-table-all w3-hoverable">
-<tr class="w3-blue"><td class="w3-center">Region</td><td class="w3-center">System</td><td class="w3-center">Security</td><td class="w3-center">jumps</td><td class="w3-center">Item Name</td><td class="w3-center">Volume</td>
+<table class="w3-table-all w3-hoverable" id="my_region_table">
+<tr class="w3-blue">
+<td class="w3-center" onclick="sortTable(0)">Region</td><td class="w3-center" onclick="sortTable(1)">System</td><td class="w3-center">Security</td><td class="w3-center">jumps</td><td class="w3-center">Item Name</td><td class="w3-center">Volume</td>
 <td class="w3-center">m3</td><td class="w3-center">DST</td><td class="w3-center">JF</td><td class="w3-center">INV</td><td class="w3-center">Price</td><td class="w3-center">%</td></tr>
 {% for order in order_table %}
     <tr>
