@@ -37,5 +37,5 @@ def indy_compression():
 	ff = filter(lambda b_id: "manufacturing" in a[b_id]["activities"] and "products" in a[b_id]["activities"]["manufacturing"] and "materials" in a[b_id]["activities"]["manufacturing"] ,a)
 	temp = {item_id : sd.getItem(item_id) for item_id in [34,35,36,37,38,39,40] }
 	table = map(lambda b_id: calc_compression(b_id,sd,temp,a), ff)
-	lit_table = sorted(table,key=lambda x:x[1],reverse=True)[:100]
+	lit_table = sorted(filter(lambda x: x[1] > 1,table),key=lambda x:x[1],reverse=True)
 	return render_template('indy_test.html', my_table = lit_table)

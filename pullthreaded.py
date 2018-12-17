@@ -1,3 +1,4 @@
+import threading
 import json
 import requests
 import os
@@ -16,13 +17,12 @@ class ESI:
 	def get(self,url):
 		r = self.s.get("https://esi.evetech.net/latest/%s"%url)
 		#print r.text.encode("utf-8")
-		for i in xrange(5):
+		for i in xrange(1):
 			try:
 				return json.loads(r.text.encode("utf-8"))
 			except:
-				print "[ERROR] Retry: %i Esi_raw_get_error:\n %s" % (i,r.text.encode("utf-8"))
+				print "[ERROR] Retry: Esi_raw_get_error: %s \n %s" % ("https://esi.evetech.net/latest/%s"%url,r.text.encode("utf-8"))
 				time.sleep(10)
-
 class ESIMarket:
 	def __init__(self, esi, sd):
 		self.esi = esi
@@ -57,30 +57,16 @@ class ESIMarket:
 					orders.append(order)
 			page_id = page_id + 1
 		return orders
-
-def PullJitaBuys(em):
-	orders_all = em.getRegion("TheForge")
-	jita_buy = filter(lambda order: order["isBuy"] == True and order["system"] == 30000142, orders_all)
-	map( lambda order: order.update({"m3" : sd.getItem(order["item"])["volume"]})  ,jita_buy)
-	#map( lambda order: order.update({"security" : sd.getSystem(order["system"])["security"]})  ,jita_buy)
-	jita_buys = {}
-	for order in jita_buy:
-		#print order
-		if order["item"] not in jita_buys:
-			jita_buys[order["item"]] = []
-		jita_buys[order["item"]].append(order)
-	for x in jita_buys:
-		jita_buys[x] = sorted(jita_buys[x],key=lambda xx : xx["price"],reverse=True)
-	return jita_buys
-def PullRegionOrders(em,region_name, filter_func):
-	aridia_sell = em.getRegion(region_name)
-	#Adding volume (m3) information later on...
-	#map( lambda order: order.update({"volume" : sd.getItem(order["item"])["volume"]})  ,aridia_sell)
-	map( lambda order: order.update({"security" : sd.getSystem(order["system"])["security"]})  ,aridia_sell)
-	return filter(filter_func, aridia_sell)
-
-def doRegionCalc(region_name):
-	aridia_orders = PullRegionOrders(em,region_name,lambda order: order["isBuy"] == False)
+g_orders = []
+def RegionPuller(region_name):
+	global g_orders
+	esi = ESI()
+	sd = evestatic.StaticData()
+	em = ESIMarket(esi,sd)
+	region_orders = em.getRegion(region_name)
+	g_orders = g_orders + region_orders
+def doRegionCalc(aridia_orders):
+	sd = evestatic.StaticData()
 	deals = []
 	print "[%s] Calculating profit..." % datetime.datetime.now()
 	for order in aridia_orders:
@@ -96,6 +82,7 @@ def doRegionCalc(region_name):
 					break;
 		order.update({"earn": earn})
 	aridia_orders = filter(lambda x: x["earn"] > 1000000,aridia_orders) # only earning more than 1m.
+	map( lambda order: order.update({"security" : sd.getSystem(order["system"])["security"]})  ,aridia_orders)
 	print "[%s] Qualified Order count: %d" % (datetime.datetime.now(),len(aridia_orders))
 	#print aridia_orders[0]
 	print "[%s] Adding jump information..." % datetime.datetime.now()
@@ -111,18 +98,42 @@ def doRegionCalc(region_name):
 	#Adding jump information
 	#jumps = jf.FindRoute(order["system"],30000142)
 	print "[%s] File dump..." % datetime.datetime.now()
-	with open(pkg_resources.resource_filename(__name__,'components/region/static/local_dumps/%s_orders.json'%region_name.replace(" ","_")), 'wb') as outfile:
+	with open(pkg_resources.resource_filename(__name__,'dumps/regional_trading.json'), 'wb') as outfile:
 		json.dump(aridia_orders, outfile)
-	print "[%s] Region %s finished..." % (datetime.datetime.now(),region_name)
-	
+	print "[%s] Region %s finished..." % (datetime.datetime.now(),"ALL")
+def GetJitaBuys():
+	jita_buy = filter(lambda order: order["isBuy"] == True and order["system"] == 30000142, g_orders)
+	#map( lambda order: order.update({"m3" : sd.getItem(order["item"])["volume"]})  ,jita_buy)
+	#map( lambda order: order.update({"security" : sd.getSystem(order["system"])["security"]})  ,jita_buy)
+	jita_buys = {}
+	for order in jita_buy:
+		if order["item"] not in jita_buys:
+			jita_buys[order["item"]] = []
+		jita_buys[order["item"]].append(order)
+	for x in jita_buys:
+		jita_buys[x] = sorted(jita_buys[x],key=lambda xx : xx["price"],reverse=True)
+	print "Len of Jitabuys", len(jita_buys)
+	return jita_buys
 print "[%s] Starting Loading components..." % datetime.datetime.now()
-sd = evestatic.StaticData()
-esi = ESI()
-em = ESIMarket(esi,sd)
-jf = evejumps.JumpFinder()
-print "[%s] All components Loaded..." % datetime.datetime.now()
-jita_buys = PullJitaBuys(em)
-for region_name in evestatic.getAllRegionNames():
-	doRegionCalc(region_name.replace(" ",""))
+start = time.time()
 
-print "[%s] All finished..." % datetime.datetime.now()
+jf = evejumps.JumpFinder()
+	
+threads = []
+for region_name in evestatic.getAllRegionNames():
+    t = threading.Thread(target=RegionPuller, args=(region_name.replace(" ",""),))
+    threads.append(t)
+    t.start()
+	
+
+for t in threads:
+	t.join()
+end = time.time()
+print(end - start)
+print len(g_orders)
+start = time.time()
+jita_buys = GetJitaBuys()
+doRegionCalc(filter(lambda order: order["isBuy"] == False,g_orders))
+
+end = time.time()
+print(end - start)
